@@ -3,112 +3,27 @@ package main
 import (
 	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"k.top/chaincode/comm"
-	"log"
+	testcc "github.com/s7techlab/cckit/testing"
 	"testing"
 )
 
-var (
-	mockStub *shim.MockStub
-	ledger   *Ledger
-)
-
-func init() {
-
-}
-
-func TestCreateAc(t *testing.T) {
-
-	mockStub = shim.NewMockStub("", nil)
-
-	ledger := Ledger{
-		admin: "admin",
-		State: comm.State{
-			Stub:          mockStub,
-			Bucket:        "account",
-			RecordCreator: "kevin",
-		},
-	}
-
-	payload := &AcPayload{
-		TxId:   "tx001",
-		TxTime: 0,
-		Memo:   "test create account",
-		Name:   "acct002",
-	}
-
-	fmt.Printf("%v \n", *payload)
-
-	txId := `000001`
-	mockStub.MockTransactionStart(txId)
-	ac, e := ledger.createAc(payload)
-	mockStub.MockTransactionEnd(txId)
-
-	if e != nil {
-		log.Fatalln(e)
-	}
-
-	fmt.Printf("%v \n", ac)
-
-	a := Ac{}
-
-	e = ledger.Get(payload.Name, &a)
-	if e != nil {
-		log.Fatalln(e)
-	}
-	fmt.Printf("%v\n", a)
+func TestCCInit(t *testing.T) {
+	//
+	cc := testcc.NewMockStub(`cars`, New())
+	fmt.Printf("%v \n",cc)
+	response := cc.Init()
+	fmt.Printf("%v \n %v\n",response.Message,string(response.Payload))
+	//cc.Invoke()
 
 }
 
-func TestGetAcct(t *testing.T) {
+func TestCCInvoke(t *testing.T) {
 
-	mockStub = shim.NewMockStub("", nil)
+	mockStub = shim.NewMockStub("ac", New())
+	fmt.Printf("%v \n",mockStub)
+	//mockStub.
 
-	ledger := Ledger{
-		admin: "admin",
-		State: comm.State{
-			Stub:          mockStub,
-			Bucket:        "account",
-			RecordCreator: "kevin",
-		},
-	}
+	//mockStub.
 
-	txId := `000001`
-	mockStub.MockTransactionStart(txId)
-	//ac, e := ledger.createAc(payload)
-	ac, e := ledger.getAc("acct001")
-	mockStub.MockTransactionEnd(txId)
 
-	if e != nil {
-		log.Fatalln(e)
-	}
-
-	fmt.Printf("%v", ac)
-}
-
-func TestExist(t *testing.T) {
-
-	mockStub = shim.NewMockStub("", nil)
-
-	ledger := Ledger{
-		admin: "admin",
-		State: comm.State{
-			Stub:          mockStub,
-			Bucket:        "account",
-			RecordCreator: "kevin",
-		},
-	}
-
-	fmt.Printf("%v \n", ledger)
-
-	b, e := ledger.hasAc("kevin")
-	if e != nil {
-		log.Fatalln(e)
-	}
-	fmt.Printf("%v \n", b)
-
-}
-
-func TestFun(t *testing.T) {
-	fmt.Printf("hahaha")
 }

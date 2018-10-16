@@ -1,102 +1,65 @@
 package main
 
 import (
-	"errors"
-	"k.top/chaincode/comm"
-	"log"
-	"strings"
-	"time"
+	"fmt"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/protos/peer"
+	"k.top/chaincode/router"
 )
 
-type AcPayload struct {
-	TxId   string
-	TxTime int64
-	Memo   string
-	//
-	Name         string
-	Organization string
+type ChainCode struct {
+	name string
+	r    *router.Router
+	ctx  *router.Context
 }
 
-type Ac struct {
-	*AcPayload
-	UpdatedAt int64
-	UpdatedBy string
+const CCName = `AcctChainCode`
+
+func (c *ChainCode) Init(stub shim.ChaincodeStubInterface) peer.Response {
+	return shim.Success([]byte("Initial ..." + CCName))
 }
 
-var (
-	ErrInValidPayload      = errors.New(`this payload is invalid`)
-	ErrAccountAlreadyExist = errors.New(`account already exist`)
-	ErrNoSuchAccount = errors.New(`no such account in ledger`)
-)
-
-func (ac *Ac) String() string {
-	return strings.Join([]string{ac.TxId, ac.Memo, ac.Name}, "|")
+func (c *ChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+	return c.r.Handle(stub)
 }
 
-type Ledger struct {
-	admin string
-	comm.State
+//^^^
+
+func getAc(args []string) peer.Response {
+	return shim.Error(``)
 }
 
-func (a *AcPayload) isValid() bool {
-	return true
+func hasAc(args []string) peer.Response {
+	return shim.Error(``)
 }
 
-func (a *AcPayload) GenKey() string {
-	return a.Name
+func createAc(args []string) peer.Response {
+	return shim.Error(``)
 }
 
-func (l *Ledger) createAc(payload *AcPayload) (*Ac, error) {
 
-	if !payload.isValid() {
-		return nil, ErrInValidPayload
+func New() *ChainCode{
+
+	router := router.
+		New(CCName).
+		HandleQuery(`getAc`, getAc).
+		HandleQuery(`hasAc`, hasAc).
+		HandleInvoke(`createAc`, createAc).
+		Build()
+
+	//router.Context{}
+
+	return &ChainCode{
+		name: CCName,
+		r:    router,
+		ctx:  nil,
 	}
 
-	if b, err := l.hasAc(payload.Name); err != nil {
-		return nil, err
-	} else if b == true {
-		return nil, ErrAccountAlreadyExist
-	}
-
-	ac := &Ac{
-		AcPayload: payload,
-		UpdatedAt: time.Now().Unix(),
-		UpdatedBy: l.admin,
-	}
-
-	log.Printf(`%s is creating %v at %s \n`, l.admin, *ac, l)
-
-	return ac, l.Put(ac.GenKey(), ac)
 }
 
-func (l *Ledger) getAc(name string) (*Ac, error) {
+func main() {
 
-	ac := &Ac{
-		AcPayload: &AcPayload{
-			Name: name,
-		},
+	if err := shim.Start(New()); err != nil {
+		fmt.Printf("Error starting %s: %s", CCName, err)
 	}
-
-	e := l.Get(ac.GenKey(), &Ac{})
-
-	return ac, e
-}
-
-func (l *Ledger) hasAc(name string) (bool, error) {
-	return l.Has(name)
-}
-
-func (l *Ledger) updateAc(payload *AcPayload) (*Ac, error) {
-
-	if !payload.isValid() {
-		return nil, ErrInValidPayload
-	}
-
-	if b, err := l.hasAc(payload.Name); err != nil {
-		return nil, err
-	} else if b == true {
-		return nil, ErrNoSuchAccount
-	}
-
-	return l.createAc(payload)
 }
