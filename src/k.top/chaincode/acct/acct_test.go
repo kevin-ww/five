@@ -10,9 +10,9 @@ import (
 func TestCCInit(t *testing.T) {
 	//
 	cc := testcc.NewMockStub(`cars`, New())
-	fmt.Printf("%v \n",cc)
+	fmt.Printf("%v \n", cc)
 	response := cc.Init()
-	fmt.Printf("%v \n %v\n",response.Message,string(response.Payload))
+	fmt.Printf("%v \n %v\n", response.Message, string(response.Payload))
 	//cc.Invoke()
 
 }
@@ -20,10 +20,9 @@ func TestCCInit(t *testing.T) {
 func TestCCInvoke(t *testing.T) {
 
 	mockStub = shim.NewMockStub("ac", New())
-	fmt.Printf("%v \n",mockStub)
+	fmt.Printf("%v \n", mockStub)
 	//mockStub.
 
 	//mockStub.
-
 
 }

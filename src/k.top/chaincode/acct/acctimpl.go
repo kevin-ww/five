@@ -8,14 +8,21 @@ import (
 	"time"
 )
 
+//generic
+type payload struct {
+	TxId   string
+	TxTime int64
+	Memo   string //
+}
+
+//inbound
 type AcPayload struct {
-	TxId         string
-	TxTime       int64
-	Memo         string //
+	payload
 	Name         string
 	Organization string
 }
 
+//outbound
 type Ac struct {
 	*AcPayload
 	UpdatedAt int64
@@ -47,13 +54,23 @@ func (a *AcPayload) GenKey() string {
 
 //biz logic
 
-func (l *AcLedger) createAc(payload *AcPayload) (*Ac, error) {
+//func (l *AcLedger) create1(payloadAsBytes []byte) (*Ac, error) {
+//
+//	var payload = &AcPayload{}
+//	e := comm.Unmarshal(payloadAsBytes, *payload)
+//	if e != nil {
+//		return nil, e
+//	}
+//	return l.create(payload)
+//}
+
+func (l *AcLedger) create(payload *AcPayload) (*Ac, error) {
 
 	if !payload.isValid() {
 		return nil, ErrInValidPayload
 	}
 
-	if b, err := l.hasAc(payload.Name); err != nil {
+	if b, err := l.has(payload); err != nil {
 		return nil, err
 	} else if b == true {
 		return nil, ErrAccountAlreadyExist
@@ -70,6 +87,33 @@ func (l *AcLedger) createAc(payload *AcPayload) (*Ac, error) {
 	return ac, l.Put(ac.GenKey(), ac)
 }
 
+func (l *AcLedger) get(payload *AcPayload) (*Ac, error) {
+	//copy
+	ac := &Ac{}
+	e := l.Get(payload.GenKey(), ac)
+	return ac, e
+}
+
+func (l *AcLedger) has(payload *AcPayload) (bool, error) {
+	return l.Has(payload.GenKey())
+}
+
+
+func (l *AcLedger) update(payload *AcPayload) (*Ac, error) {
+
+	if !payload.isValid() {
+		return nil, ErrInValidPayload
+	}
+
+	if b, err := l.has(payload); err != nil {
+		return nil, err
+	} else if b == true {
+		return nil, ErrNoSuchAccount
+	}
+
+	return l.create(payload)
+}
+
 func (l *AcLedger) getAc(name string) (*Ac, error) {
 
 	ac := &Ac{
@@ -83,21 +127,21 @@ func (l *AcLedger) getAc(name string) (*Ac, error) {
 	return ac, e
 }
 
-func (l *AcLedger) hasAc(name string) (bool, error) {
-	return l.Has(name)
-}
-
-func (l *AcLedger) updateAc(payload *AcPayload) (*Ac, error) {
-
-	if !payload.isValid() {
-		return nil, ErrInValidPayload
-	}
-
-	if b, err := l.hasAc(payload.Name); err != nil {
-		return nil, err
-	} else if b == true {
-		return nil, ErrNoSuchAccount
-	}
-
-	return l.createAc(payload)
-}
+//func (l *AcLedger) hasAc(name string) (bool, error) {
+//	return l.Has(name)
+//}
+//
+//func (l *AcLedger) updateAc(payload *AcPayload) (*Ac, error) {
+//
+//	if !payload.isValid() {
+//		return nil, ErrInValidPayload
+//	}
+//
+//	if b, err := l.hasAc(payload.Name); err != nil {
+//		return nil, err
+//	} else if b == true {
+//		return nil, ErrNoSuchAccount
+//	}
+//
+//	return l.create(payload)
+//}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
+	"k.top/chaincode/comm"
 	"k.top/chaincode/router"
 )
 
@@ -20,41 +21,87 @@ func (c *ChainCode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 }
 
 func (c *ChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
-	return c.r.Handle(stub)
+	//return c.r.Handle(stub)
+	return handle(stub)
 }
 
-//^^^
+func handle(stub shim.ChaincodeStubInterface) peer.Response {
+	fn, args := stub.GetFunctionAndParameters()
+	acl := &AcLedger{
+		admin: "",
+		State: comm.State{
+			Stub:          stub,
+			Bucket:        "account",
+			RecordCreator: "acctAdmin",
+		},
+	}
+	return process(acl, fn, []byte(args[0]))
 
-func getAc(args []string) peer.Response {
+	//if fn == `getAc` {
+	//	return handleGetAc(acl, args)
+	//} else if fn == `createAc` {
+	//	return handleCreateAc(acl, args)
+	//} else if fn == `hasAc` {
+	//	return handleHasAc(acl, args)
+	//} else if fn == `updateAc`{
+	//	return handleUpdateAc(acl, args)
+	//}
+	//return shim.Error(``)
+}
+
+func process(ledger *AcLedger, funcName string, payload []byte) peer.Response {
+	//only 1 arg is allowed
+	//handlerFunc := funcProvided[funcName]
+	//handlerFunc()
+	acPayload := &AcPayload{}
+	comm.Unmarshal(payload,acPayload)
+
+	if funcName==`create`{
+		return encodeResponse(ledger.createAc())
+	}
+
 	return shim.Error(``)
 }
 
-func hasAc(args []string) peer.Response {
-	return shim.Error(``)
-}
+type handleFunc func(payload []byte) peer.Response
 
-func createAc(args []string) peer.Response {
-	return shim.Error(``)
-}
+var funcProvided map[string]handleFunc
 
+func New() *ChainCode {
 
-func New() *ChainCode{
-
-	router := router.
-		New(CCName).
-		HandleQuery(`getAc`, getAc).
-		HandleQuery(`hasAc`, hasAc).
-		HandleInvoke(`createAc`, createAc).
-		Build()
-
-	//router.Context{}
+	funcProvided = make(map[string]handleFunc)
 
 	return &ChainCode{
 		name: CCName,
-		r:    router,
-		ctx:  nil,
+		//r:    router,
+		ctx: nil,
 	}
 
+}
+
+func handleUpdateAc(ledger *AcLedger, strings []string) peer.Response {
+	return encodeResponse(nil, nil)
+}
+
+func handleGetAc(acl *AcLedger, args []string) peer.Response {
+	return encodeResponse(acl.getAc(args[0]))
+}
+
+func handleCreateAc(acl *AcLedger, args []string) peer.Response {
+	return encodeResponse(acl.createAc([]byte(args[0])))
+}
+
+func handleHasAc(acl *AcLedger, args []string) peer.Response {
+	return encodeResponse(acl.hasAc(args[0]))
+}
+
+func encodeResponse(data interface{}, err error) peer.Response {
+
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	return shim.Success(comm.Marshal(data))
 }
 
 func main() {
