@@ -37,16 +37,6 @@ func handle(stub shim.ChaincodeStubInterface) peer.Response {
 	}
 	return process(acl, fn, []byte(args[0]))
 
-	//if fn == `getAc` {
-	//	return handleGetAc(acl, args)
-	//} else if fn == `createAc` {
-	//	return handleCreateAc(acl, args)
-	//} else if fn == `hasAc` {
-	//	return handleHasAc(acl, args)
-	//} else if fn == `updateAc`{
-	//	return handleUpdateAc(acl, args)
-	//}
-	//return shim.Error(``)
 }
 
 func process(ledger *AcLedger, funcName string, payload []byte) peer.Response {
@@ -54,10 +44,17 @@ func process(ledger *AcLedger, funcName string, payload []byte) peer.Response {
 	//handlerFunc := funcProvided[funcName]
 	//handlerFunc()
 	acPayload := &AcPayload{}
-	comm.Unmarshal(payload,acPayload)
 
-	if funcName==`create`{
-		return encodeResponse(ledger.createAc())
+	comm.Unmarshal(payload, acPayload)
+
+	if funcName == `create` {
+		return encodeResponse(ledger.create(acPayload))
+	} else if funcName == `update` {
+		return encodeResponse(ledger.update(acPayload))
+	} else if funcName == `has` {
+		return encodeResponse(ledger.has(acPayload))
+	} else if funcName == `get` {
+		return encodeResponse(ledger.has(acPayload))
 	}
 
 	return shim.Error(``)
@@ -79,28 +76,10 @@ func New() *ChainCode {
 
 }
 
-func handleUpdateAc(ledger *AcLedger, strings []string) peer.Response {
-	return encodeResponse(nil, nil)
-}
-
-func handleGetAc(acl *AcLedger, args []string) peer.Response {
-	return encodeResponse(acl.getAc(args[0]))
-}
-
-func handleCreateAc(acl *AcLedger, args []string) peer.Response {
-	return encodeResponse(acl.createAc([]byte(args[0])))
-}
-
-func handleHasAc(acl *AcLedger, args []string) peer.Response {
-	return encodeResponse(acl.hasAc(args[0]))
-}
-
 func encodeResponse(data interface{}, err error) peer.Response {
-
 	if err != nil {
 		return shim.Error(err.Error())
 	}
-
 	return shim.Success(comm.Marshal(data))
 }
 

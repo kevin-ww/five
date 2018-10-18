@@ -15,6 +15,13 @@ type payload struct {
 	Memo   string //
 }
 
+type payloadType interface {
+	IsValid() bool
+	Key() string
+	Marshal() []byte
+	UnMarshal(data []byte) *payload
+}
+
 //inbound
 type AcPayload struct {
 	payload
@@ -27,6 +34,14 @@ type Ac struct {
 	*AcPayload
 	UpdatedAt int64
 	UpdatedBy string
+}
+
+func (a *Ac) isValid() bool {
+	return true
+}
+
+func (a *Ac) Key() string {
+	return a.Name
 }
 
 var (
@@ -44,12 +59,7 @@ type AcLedger struct {
 	comm.State
 }
 
-func (a *AcPayload) isValid() bool {
-	return true
-}
-
-func (a *AcPayload) GenKey() string {
-	return a.Name
+type ledger interface {
 }
 
 //biz logic
@@ -97,7 +107,6 @@ func (l *AcLedger) get(payload *AcPayload) (*Ac, error) {
 func (l *AcLedger) has(payload *AcPayload) (bool, error) {
 	return l.Has(payload.GenKey())
 }
-
 
 func (l *AcLedger) update(payload *AcPayload) (*Ac, error) {
 
